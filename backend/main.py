@@ -1,21 +1,59 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
+from models import Profile
+from database import db
 
 app = FastAPI()
 
 @app.get("/api/health")
 def health_check():
-        return {"status": "ok", "message": "Backend is running!"}
-
-# The following are endpoints:
+    return {"status": "ok", "message": "Backend is running"}
 
 @app.post("/api/profiles/upload")
-def upload_profile():
-            return {"message": "Profile upload edpoint, not implemented as of yet"}
+async def upload_profile(file: UploadFile = File(...), name: str = "", description: str = "", printer_type: str = ""):
+    """Upload a new slicer profile"""
+    try:
+        # Read file content
+        content = await file.read()
+        config_text = content.decode("utf-8")
+        
+        # Create a profile object
+        profile = Profile(
+            name=name or file.filename,
+            description=description,
+            printer_type=printer_type,
+            config_content=config_text,
+            file_name=file.filename
+        )
+        
+        # Save to database
+        profile_id = db.insert_profile(profile)
+        
+        return {
+            "status": "success",
+            "message": "Profile uploaded successfully",
+            "profile_id": profile_id,
+            "name": profile.name
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/profiles")
 def list_profiles():
-            return {"profiles": []}
+    """Get all profiles"""
+    try:
+        profiles = db.get_all_profiles()
+        return {"profiles": profiles, "count": len(profiles)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/profiles/{profile_id}")
 def get_profile(profile_id: str):
-        return {"profile_id": profile_id, "message": "Profile detail endpoint, not implemented as of yet"}
+    """Get a specific profile by ID"""
+    try:
+        profile = db.get_profile_by_id(profile_id)
+        if profile:
+            return {"profile": profile}
+        else:
+            return {"status": "error", "message": "Profile not found"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
