@@ -51,28 +51,31 @@ export default function BrowsePage() {
 
         {!loading && profiles.length > 0 && (
           <ul className="mt-8 divide-y divide-zinc-200 dark:divide-zinc-800 border-t border-b border-zinc-200 dark:border-zinc-800">
-            {profiles.map((p) => (
-              <li key={p.id}>
-                <Link
-                  href={`/profiles/${p.id}`}
-                  className="block py-5 -mx-3 px-3 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-                >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                      {p.name}
-                    </h2>
-                    <span className="text-xs text-zinc-500 shrink-0 font-mono">
-                      {p.printer}
-                    </span>
-                  </div>
-                  {p.description && (
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
-                      {p.description}
-                    </p>
-                  )}
-                </Link>
-              </li>
-            ))}
+            {profiles.map((p) => {
+              const id = p.id || p._id || p.profile_id;
+              return (
+                <li key={id}>
+                  <Link
+                    href={`/profiles/${id}`}
+                    className="block py-5 -mx-3 px-3 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+                  >
+                    <div className="flex items-baseline justify-between gap-4">
+                      <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        {p.name}
+                      </h2>
+                      <span className="text-xs text-zinc-500 shrink-0 font-mono">
+                        {p.printer_type}
+                      </span>
+                    </div>
+                    {p.description && (
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                        {p.description}
+                      </p>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
