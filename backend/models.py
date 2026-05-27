@@ -12,15 +12,15 @@ class Profile:
         self.file_name = file_name
         self.uploaded_date = datetime.now().isoformat()
 
-def to_dict(self):
-    """Convert profile to dictionary for database storage"""
-    return {
-        "id": self.id,
-        "name": self.name,
-        "description": self.description,
-        "printer_type": self.printer_type,            
-        "config_content": self.config_content,
-        "file_name": self.file_name,
-        "uploaded_date": self.uploaded_date
+    def to_dict(self):
+        """Convert profile to dictionary for database storage"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "printer_type": self.printer_type,            
+            "config_content": self.config_content,
+            "file_name": self.file_name,
+            "uploaded_date": self.uploaded_date
     }
         

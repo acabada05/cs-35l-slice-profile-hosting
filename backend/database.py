@@ -10,7 +10,7 @@ class Database:
         self.db = self.client["slicer_profiles"]
         self.profiles_collection = self.db["profiles"]
 
-    def insert_profiles(self, profile: Profile) -> str:
+    def insert_profile(self, profile: Profile) -> str:
         """Insert a new profile and return its ID"""
         profile_dict = profile.to_dict()
         result = self.profiles_collection.insert_one(profile_dict)
