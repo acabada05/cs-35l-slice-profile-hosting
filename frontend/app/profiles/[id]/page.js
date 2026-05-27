@@ -42,14 +42,19 @@ export default function ProfileDetailPage() {
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
               {profile.name}
             </h1>
-            <p className="mt-2 text-sm text-zinc-500 font-mono">{profile.printer}</p>
+            <p className="mt-2 text-sm text-zinc-500 font-mono">
+              {profile.printer_type}
+            </p>
             {profile.description && (
               <p className="mt-6 text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 {profile.description}
               </p>
             )}
             <div className="mt-10 text-xs text-zinc-500">
-              Profile ID: <span className="font-mono">{profile.id}</span>
+              Profile ID:{' '}
+              <span className="font-mono">
+                {profile.id || profile._id || profile.profile_id}
+              </span>
             </div>
           </article>
         )}
