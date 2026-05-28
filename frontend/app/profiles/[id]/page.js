@@ -50,6 +50,19 @@ export default function ProfileDetailPage() {
                 {profile.description}
               </p>
             )}
+
+            {/* 👇 这是把文件内容渲染出来的代码块 👇 */}
+            {profile.config_content && (
+              <div className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-8">
+                <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">
+                  Configuration File: {profile.file_name}
+                </h2>
+                <pre className="p-4 rounded-md bg-zinc-100 dark:bg-zinc-900 text-xs font-mono text-zinc-800 dark:text-zinc-300 overflow-x-auto whitespace-pre-wrap">
+                  {profile.config_content}
+                </pre>
+              </div>
+            )}
+
             <div className="mt-10 text-xs text-zinc-500">
               Profile ID:{' '}
               <span className="font-mono">

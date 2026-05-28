@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from models import Profile
 from database import db
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +18,12 @@ def health_check():
     return {"status": "ok", "message": "Backend is running"}
 
 @app.post("/api/profiles/upload")
-async def upload_profile(file: UploadFile = File(...), name: str = "", description: str = "", printer_type: str = ""):
+async def upload_profile(
+    file: UploadFile = File(...), 
+    name: str = Form(""), 
+    description: str = Form(""), 
+    printer_type: str = Form("")
+):
     """Upload a new slicer profile"""
     try:
         # Read file content
