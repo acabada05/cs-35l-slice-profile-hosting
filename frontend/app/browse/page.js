@@ -23,13 +23,22 @@ export default function BrowsePage() {
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
             Browse profiles
           </h1>
-          <Link
-            href="/upload"
-            className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-          >
-            Upload new →
-          </Link>
+          <div className="flex gap-4 text-sm text-zinc-600 dark:text-zinc-400">
+            <Link
+              href="/compare"
+              className="hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              Compare →
+            </Link>
+            <Link
+              href="/upload"
+              className="hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              Upload new →
+            </Link>
+          </div>
         </div>
+
 
         {loading && <p className="mt-8 text-sm text-zinc-500">Loading…</p>}
 

@@ -22,12 +22,20 @@ export default function ProfileDetailPage() {
   return (
     <div className="flex-1 px-6 py-16">
       <div className="max-w-3xl mx-auto">
-        <Link
-          href="/browse"
-          className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-        >
-          ← Back to browse
-        </Link>
+        <div className="flex items-baseline justify-between">
+          <Link
+            href="/browse"
+            className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            ← Back to browse
+          </Link>
+          <Link
+            href="/compare"
+            className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            Compare profiles →
+          </Link>
+        </div>
 
         {loading && <p className="mt-8 text-sm text-zinc-500">Loading…</p>}
 
@@ -50,7 +58,6 @@ export default function ProfileDetailPage() {
                 {profile.description}
               </p>
             )}
-
             {profile.config_content && (
               <div className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-8">
                 <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">
@@ -61,7 +68,6 @@ export default function ProfileDetailPage() {
                 </pre>
               </div>
             )}
-
             <div className="mt-10 text-xs text-zinc-500">
               Profile ID:{' '}
               <span className="font-mono">
