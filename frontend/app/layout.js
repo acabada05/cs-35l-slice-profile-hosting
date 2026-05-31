@@ -39,6 +39,9 @@ export default function RootLayout({ children }) {
               <Link href="/upload" className="hover:text-zinc-900 dark:hover:text-zinc-100">
                 Upload
               </Link>
+              <Link href="/compare" className="hover:text-zinc-900 dark:hover:text-zinc-100">
+                Compare
+              </Link>
             </div>
           </div>
         </nav>
