@@ -51,7 +51,6 @@ export default function ProfileDetailPage() {
               </p>
             )}
 
-            {/* 👇 这是把文件内容渲染出来的代码块 👇 */}
             {profile.config_content && (
               <div className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-8">
                 <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">
