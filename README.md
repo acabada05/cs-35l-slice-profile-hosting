@@ -1,10 +1,10 @@
-# 3D Printer Slice Profile Hosting Service
+# 3D Printer Slicer Profile Hosting Service
 
-A web-based platofrm for uploading, managing, sharing, and comparing 3D printer slicer profiles.
+A web-based platform for uploading, managing, sharing, and comparing 3D printer slicer profiles.
 
 ## Project Overview
 
-Users can upload, view, edit, and compare slicer configuarions for different 3D printers. The platform provides an integrated 3D STL viewer, config editor, and diff viewer.
+Users can upload, view, edit, and compare slicer configurations for different 3D printers. The platform provides an integrated 3D STL viewer, config editor, and diff viewer.
 
 ## Tech Stack
 
@@ -15,7 +15,9 @@ Users can upload, view, edit, and compare slicer configuarions for different 3D 
 
 **Frontend:**
 - React / Next.js
-- Three.js (3D Viewer)
+- Tailwind CSS
+- react-diff-viewer-continued
+- Three.js (3D Viewer — planned)
 
 ## Project Structure
 cs-35l-slice-profile-hosting/
@@ -36,7 +38,14 @@ cs-35l-slice-profile-hosting/
 See [BACKEND_SETUP.md](./backend/BACKEND_SETUP.md) for detailed backend setup instructions.
 
 ### Frontend Setup
-TBD
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The app runs at [http://localhost:3000](http://localhost:3000). The backend must be running at `http://localhost:8000` for API calls to work.
 
 ## API Endpoints
 
@@ -45,6 +54,13 @@ TBD
 - `POST /api/profiles/upload` - Upload a new profile
 - `GET /api/profiles` - List all profiles
 - `GET /api/profiles/{id}` - Get a specific profile
+
+## Pages
+- `/` — Landing page
+- `/upload` — Upload a new slicer profile
+- `/browse` — Browse all hosted profiles
+- `/profiles/[id]` — View a single profile with its configuration content
+- `/compare` — Compare two profiles side-by-side with diff highlighting
 
 ## Team Members
 - Nathan Lintu
