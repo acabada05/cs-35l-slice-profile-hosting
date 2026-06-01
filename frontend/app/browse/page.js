@@ -3,21 +3,29 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { listProfiles } from '@/lib/api';
+import { getRecentlyViewed, clearRecentlyViewed } from '@/lib/recentlyViewed';
 
 export default function BrowsePage() {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
+  const [recent, setRecent] = useState([]);
 
   useEffect(() => {
     listProfiles()
       .then(setProfiles)
       .catch((err) => setError(err.message || 'Failed to load profiles.'))
       .finally(() => setLoading(false));
+
+    setRecent(getRecentlyViewed());
   }, []);
 
-  // Case-insensitive substring match against name / printer_type / description
+  function handleClearRecent() {
+    clearRecentlyViewed();
+    setRecent([]);
+  }
+
   const filteredProfiles = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return profiles;
@@ -54,6 +62,42 @@ export default function BrowsePage() {
             </Link>
           </div>
         </div>
+
+        {recent.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Recently viewed
+              </h2>
+              <button
+                type="button"
+                onClick={handleClearRecent}
+                className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                Clear
+              </button>
+            </div>
+            <ul className="flex gap-2 overflow-x-auto pb-2">
+              {recent.map((p) => (
+                <li key={p.id} className="shrink-0">
+                  <Link
+                    href={`/profiles/${p.id}`}
+                    className="block px-4 py-3 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors min-w-[180px]"
+                  >
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                      {p.name}
+                    </div>
+                    {p.printer_type && (
+                      <div className="text-xs text-zinc-500 font-mono mt-1 truncate">
+                        {p.printer_type}
+                      </div>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {!loading && !error && profiles.length > 0 && (
           <div className="mt-8 relative">

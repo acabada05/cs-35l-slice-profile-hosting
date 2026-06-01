@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getProfile } from '@/lib/api';
+import { addRecentlyViewed } from '@/lib/recentlyViewed';
 
 export default function ProfileDetailPage() {
   const { id } = useParams();
@@ -14,7 +15,10 @@ export default function ProfileDetailPage() {
   useEffect(() => {
     if (!id) return;
     getProfile(id)
-      .then(setProfile)
+      .then((p) => {
+      setProfile(p);
+      addRecentlyViewed(p);
+      })
       .catch((err) => setError(err.message || 'Failed to load profile.'))
       .finally(() => setLoading(false));
   }, [id]);
