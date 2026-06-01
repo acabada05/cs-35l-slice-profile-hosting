@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { listProfiles } from '@/lib/api';
 
@@ -8,6 +8,7 @@ export default function BrowsePage() {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     listProfiles()
@@ -15,6 +16,21 @@ export default function BrowsePage() {
       .catch((err) => setError(err.message || 'Failed to load profiles.'))
       .finally(() => setLoading(false));
   }, []);
+
+  // Case-insensitive substring match against name / printer_type / description
+  const filteredProfiles = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return profiles;
+    return profiles.filter((p) => {
+      const fields = [p.name, p.printer_type, p.description]
+        .filter(Boolean)
+        .map((f) => String(f).toLowerCase());
+      return fields.some((f) => f.includes(q));
+    });
+  }, [profiles, query]);
+
+  const inputClass =
+    'block w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100';
 
   return (
     <div className="flex-1 px-6 py-16">
@@ -39,6 +55,27 @@ export default function BrowsePage() {
           </div>
         </div>
 
+        {!loading && !error && profiles.length > 0 && (
+          <div className="mt-8 relative">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name, printer, or description…"
+              className={inputClass}
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
 
         {loading && <p className="mt-8 text-sm text-zinc-500">Loading…</p>}
 
@@ -58,34 +95,54 @@ export default function BrowsePage() {
           </p>
         )}
 
-        {!loading && profiles.length > 0 && (
-          <ul className="mt-8 divide-y divide-zinc-200 dark:divide-zinc-800 border-t border-b border-zinc-200 dark:border-zinc-800">
-            {profiles.map((p) => {
-              const id = p.id || p._id || p.profile_id;
-              return (
-                <li key={id}>
-                  <Link
-                    href={`/profiles/${id}`}
-                    className="block py-5 -mx-3 px-3 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-                  >
-                    <div className="flex items-baseline justify-between gap-4">
-                      <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                        {p.name}
-                      </h2>
-                      <span className="text-xs text-zinc-500 shrink-0 font-mono">
-                        {p.printer_type}
-                      </span>
-                    </div>
-                    {p.description && (
-                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
-                        {p.description}
-                      </p>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+        {!loading && !error && profiles.length > 0 && filteredProfiles.length === 0 && (
+          <p className="mt-8 text-sm text-zinc-500">
+            No profiles match &ldquo;{query}&rdquo;.{' '}
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="underline"
+            >
+              Clear search
+            </button>
+          </p>
+        )}
+
+        {!loading && filteredProfiles.length > 0 && (
+          <>
+            {query && (
+              <p className="mt-6 text-xs text-zinc-500">
+                Showing {filteredProfiles.length} of {profiles.length}
+              </p>
+            )}
+            <ul className="mt-4 divide-y divide-zinc-200 dark:divide-zinc-800 border-t border-b border-zinc-200 dark:border-zinc-800">
+              {filteredProfiles.map((p) => {
+                const id = p.id || p._id || p.profile_id;
+                return (
+                  <li key={id}>
+                    <Link
+                      href={`/profiles/${id}`}
+                      className="block py-5 -mx-3 px-3 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+                    >
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                          {p.name}
+                        </h2>
+                        <span className="text-xs text-zinc-500 shrink-0 font-mono">
+                          {p.printer_type}
+                        </span>
+                      </div>
+                      {p.description && (
+                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                          {p.description}
+                        </p>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </div>
     </div>
