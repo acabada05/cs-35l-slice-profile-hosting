@@ -35,3 +35,14 @@ export async function getProfile(id) {
   // Backend returns { profile: {...} }
   return data.profile;
 }
+
+export async function updateProfile(id, formData){
+  const res = await fetch(`${API_URL}/api/profiles/${id}`, {
+    method: 'PUT',
+    body: formData,
+  });
+  if (!res.ok) throw new Error(`Failed to update profile (${res.status})`);
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message || 'Failed to update');
+  return data;
+}

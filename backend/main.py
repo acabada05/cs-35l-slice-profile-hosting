@@ -71,3 +71,31 @@ def get_profile(profile_id: str):
             return {"status": "error", "message": "Profile not found"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+#Frontend Endpoint to Update an Existing Profile.
+#Creates backend API endpoint frontend calls to update an existing profile.
+@app.put("/api/profiles/{profile_id}")
+async def update_profile(
+    profile_id: str,
+    file: UploadFile = File(...),
+    name: str = Form(""),
+    description: str = Form(""),
+    printer_type: str = Form("")
+):
+    """Update an existing profile (creates a new version)"""
+    try:
+        content = await file.read()
+        config_text = content.decode("utf-8")
+
+        profile = Profile(
+            name=name,
+            description=description,
+            printer_type=printer_type,
+            config_content=config_text,
+            file_name=file.filename
+        )
+
+        result = db.update_profile(profile_id, profile)
+        return {"status": "success", "message": "Profile updated", "profile_id": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
