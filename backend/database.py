@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pymongo import MongoClient
 from config import DATABASE_URL
 from models import Profile
@@ -68,4 +70,43 @@ class Database:
             del user["_id"]
         return user
     
+    def update_profile(self, profile_id, profile):
+        """Update an existing profile and create a new version"""
+        from bson.objectid import ObjectId
+        
+        # Increment version nuber
+        existing = self.db.profiles.find_one({"_id": ObjectId(profile_id)})
+        version = (existing.get("version", 0) if existing else 0) + 1
+
+        #Store with version metadata
+        profile_data = profile.to_dict()
+        profile_data["version"] = version
+        profile_data["parent_id"] = profile_id  # Link to original profile
+        profile_data["updated_at"] = datetime.utcnow()
+        
+        result = self.profiles_collection.update_one(
+            {"_id": ObjectId(profile_id)},
+            {"$set": profile_data}
+        )
+        return profile_id
+    
+    def _format_profile(self, profile_doc):
+        """Format a profile document for API response"""
+        if profile_doc:
+            profile_doc["id"] = str(profile_doc["_id"])
+            del profile_doc["_id"]
+        return profile_doc
+
+    def get_profile_versions(self, profile_id):
+        """Get all versions of a profile"""
+        from bson.objectid import ObjectId
+        
+        versions = list(self.profiles_collection.find({
+            "$or": [
+                {"_id": ObjectId(profile_id)},
+                {"parent_id": profile_id}
+            ]
+        }).sort("version", -1))
+
+        return [self._format_profile(v) for v in versions]
 db = Database()
