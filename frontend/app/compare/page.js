@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { listProfiles, getProfile } from '@/lib/api';
+import { isAuthenticated } from '@/lib/authContext';
 
 // react-diff-viewer-continued uses browser APIs, load client-side only
 const ReactDiffViewer = dynamic(
@@ -25,8 +26,19 @@ export default function ComparePage() {
   const [compareError, setCompareError] = useState('');
 
   const [splitView, setSplitView] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    // Determine user session status
+    const authed = isAuthenticated();
+    setIsLoggedIn(authed);
+
+    if (!authed) {
+      setProfilesLoading(false);
+      return;
+    }
+
+    // Load current user's profiles
     listProfiles()
       .then(setProfiles)
       .catch((err) => setProfilesError(err.message || 'Failed to load profiles.'))
@@ -49,6 +61,7 @@ export default function ComparePage() {
 
     setComparing(true);
     setCompareError('');
+    
     Promise.all([getProfile(leftId), getProfile(rightId)])
       .then(([left, right]) => {
         setLeftProfile(left);
@@ -64,6 +77,26 @@ export default function ComparePage() {
 
   const selectClass =
     'block w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100';
+
+  // Authentication Guard
+  if (!profilesLoading && !isLoggedIn) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-24">
+        <div className="max-w-md w-full text-center p-8 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Authentication Required</h2>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Please log in to compare differences between your personal slicer profiles side-by-side.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-flex w-full items-center justify-center h-10 px-4 rounded-lg bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 dark:bg-zinc-100 dark:text-black dark:hover:bg-zinc-200 transition-colors"
+          >
+            Go to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 px-6 py-16">

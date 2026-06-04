@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import AuthNavLinks from "./components/AuthNavLinks";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,7 @@ export default function RootLayout({ children }) {
             >
               Slice Profiles
             </Link>
-            <div className="flex gap-6 text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="flex gap-6 text-sm items-center text-zinc-600 dark:text-zinc-400">
               <Link href="/browse" className="hover:text-zinc-900 dark:hover:text-zinc-100">
                 Browse
               </Link>
@@ -42,6 +43,8 @@ export default function RootLayout({ children }) {
               <Link href="/compare" className="hover:text-zinc-900 dark:hover:text-zinc-100">
                 Compare
               </Link>
+              {/* This component displays Sign In / Sign Out dynamically */}
+              <AuthNavLinks />
             </div>
           </div>
         </nav>
