@@ -80,6 +80,7 @@ export async function getProfile(id) {
 export async function updateProfile(id, formData){
   const res = await fetch(`${API_URL}/api/profiles/${id}`, {
     method: 'PUT',
+    headers: getAuthHeaders(),
     body: formData,
   });
   if (!res.ok) throw new Error(`Failed to update profile (${res.status})`);
