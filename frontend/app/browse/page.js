@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { listProfiles } from '@/lib/api';
 import { getRecentlyViewed, clearRecentlyViewed } from '@/lib/recentlyViewed';
+import { isAuthenticated } from '@/lib/authContext';
 
 export default function BrowsePage() {
   const [profiles, setProfiles] = useState([]);
@@ -11,14 +12,43 @@ export default function BrowsePage() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    // Determine user session status
+    const authed = isAuthenticated();
+    setIsLoggedIn(authed);
+
+    if (!authed) {
+      setLoading(false);
+      return;
+    }
+
+    // Load the current user's profiles
     listProfiles()
-      .then(setProfiles)
+      .then((liveProfiles) => {
+        setProfiles(liveProfiles);
+
+        // Filter deleted profiles
+        const localHistory = getRecentlyViewed() || [];
+        const validRecent = localHistory.filter((recentItem) =>
+          liveProfiles.some((p) => (p.id || p._id) === recentItem.id)
+        );
+
+        setRecent(validRecent);
+
+        // Sync the filtered, cleaned history array back to localStorage
+        try {
+          const STORAGE_KEY = 'slice-profiles:recently-viewed';
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(validRecent));
+          }
+        } catch (e) {
+          console.error("Failed to sync historical storage:", e);
+        }
+      })
       .catch((err) => setError(err.message || 'Failed to load profiles.'))
       .finally(() => setLoading(false));
-
-    setRecent(getRecentlyViewed());
   }, []);
 
   function handleClearRecent() {
@@ -40,12 +70,31 @@ export default function BrowsePage() {
   const inputClass =
     'block w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100';
 
+  if (!loading && !isLoggedIn) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-24">
+        <div className="max-w-md w-full text-center p-8 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Authentication Required</h2>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Please log in to manage, query, and search your secure 3D slicer profiles.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-flex w-full items-center justify-center h-10 px-4 rounded-lg bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 dark:bg-zinc-100 dark:text-black dark:hover:bg-zinc-200 transition-colors"
+          >
+            Go to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 px-6 py-16">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-baseline justify-between">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Browse profiles
+            My Profiles
           </h1>
           <div className="flex gap-4 text-sm text-zinc-600 dark:text-zinc-400">
             <Link
@@ -63,6 +112,7 @@ export default function BrowsePage() {
           </div>
         </div>
 
+        {/* Recently viewed carousel block */}
         {recent.length > 0 && (
           <section className="mt-8">
             <div className="flex items-baseline justify-between mb-3">
@@ -72,7 +122,7 @@ export default function BrowsePage() {
               <button
                 type="button"
                 onClick={handleClearRecent}
-                className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
               >
                 Clear
               </button>
@@ -113,7 +163,7 @@ export default function BrowsePage() {
                 type="button"
                 onClick={() => setQuery('')}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
               >
                 Clear
               </button>
@@ -131,9 +181,9 @@ export default function BrowsePage() {
 
         {!loading && !error && profiles.length === 0 && (
           <p className="mt-8 text-sm text-zinc-500">
-            No profiles yet.{' '}
+            You haven't uploaded any profiles yet.{' '}
             <Link href="/upload" className="underline">
-              Upload the first one
+              Upload your first one
             </Link>
             .
           </p>
@@ -145,7 +195,7 @@ export default function BrowsePage() {
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="underline"
+              className="underline cursor-pointer"
             >
               Clear search
             </button>
