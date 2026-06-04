@@ -9,32 +9,63 @@ class Database:
         self.client = MongoClient(DATABASE_URL)
         self.db = self.client["slicer_profiles"]
         self.profiles_collection = self.db["profiles"]
+        self.users_collection = self.db["users"]
 
-    def insert_profile(self, profile: Profile) -> str:
-        """Insert a new profile and return its ID"""
+    # Upload profile for user
+    def insert_profile(self, profile: Profile, owner: str) -> str:
+        """Insert a new profile linked to an owner and return its ID"""
         profile_dict = profile.to_dict()
+        profile_dict["owner"] = owner  # Link the profile to the logged-in user
         result = self.profiles_collection.insert_one(profile_dict)
         return str(result.inserted_id)
     
-    def get_all_profiles(self) -> List[dict]:
-        """Get all profiles"""
+    # Get all profiles owned by user
+    def get_user_profiles(self, owner: str) -> List[dict]:
         profiles = []
-        for doc in self.profiles_collection.find():
+        for doc in self.profiles_collection.find({"owner": owner}):
             doc["id"] = str(doc["_id"])  # Convert MongoDB ID to string
             del doc["_id"]  # Remove the MongoDB internal ID
             profiles.append(doc)
         return profiles
     
-    def get_profile_by_id(self, profile_id: str) -> Optional[dict]:
-        """Get a specific profile by ID"""
+    # Fetch a specific profile only if the user owns it.
+    def get_profile_by_id_and_owner(self, profile_id: str, owner: str) -> Optional[dict]:
         try:
             obj_id = ObjectId(profile_id)
-            profile = self.profiles_collection.find_one({"_id": obj_id})
+            profile = self.profiles_collection.find_one({"_id": obj_id, "owner": owner})
             if profile:
                 profile["id"] = str(profile["_id"])
                 del profile["_id"]
             return profile
         except:
             return None
+
+    # Deletes a profile belonging to user. Returns True if deleted.
+    def delete_profile_by_id_and_owner(self, profile_id: str, owner: str) -> bool:
+        try:
+            obj_id = ObjectId(profile_id)
+            result = self.profiles_collection.delete_one({"_id": obj_id, "owner": owner})
+            return result.deleted_count > 0
+        except Exception:
+            return False
+            
+    # Auth Methods
+    def insert_user(self, user_dict: dict) -> str:
+        result = self.users_collection.insert_one(user_dict)
+        return str(result.inserted_id)
+
+    def get_user_by_username(self, username: str) -> Optional[dict]:
+        user = self.users_collection.find_one({"username": username})
+        if user:
+            user["id"] = str(user["_id"])
+            del user["_id"]
+        return user
+
+    def get_user_by_email(self, email: str) -> Optional[dict]:
+        user = self.users_collection.find_one({"email": email})
+        if user:
+            user["id"] = str(user["_id"])
+            del user["_id"]
+        return user
     
 db = Database()

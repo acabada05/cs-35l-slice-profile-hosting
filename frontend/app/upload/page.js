@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { uploadProfile } from '@/lib/api';
+import { isAuthenticated } from '@/lib/authContext';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -12,6 +14,15 @@ export default function UploadPage() {
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Determine user session status
+    const authed = isAuthenticated();
+    setIsLoggedIn(authed);
+    setCheckingAuth(false);
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -33,6 +44,34 @@ export default function UploadPage() {
   const inputClass =
     'mt-2 block w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100';
 
+  if (checkingAuth) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-sm text-zinc-500">Verifying session status…</p>
+      </div>
+    );
+  }
+
+  // Protected View Guard
+  if (!isLoggedIn) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-24">
+        <div className="max-w-md w-full text-center p-8 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Authentication Required</h2>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Please log in to upload and link slicer profiles securely to your account space.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-flex w-full items-center justify-center h-10 px-4 rounded-lg bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 dark:bg-zinc-100 dark:text-black dark:hover:bg-zinc-200 transition-colors"
+          >
+            Go to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 px-6 py-16">
       <div className="max-w-xl mx-auto">
@@ -40,7 +79,7 @@ export default function UploadPage() {
           Upload a slicer profile
         </h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Share your tuned printer settings with the community.
+          Save your tuned printer settings securely to your private workspace profile.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-10 space-y-6">
