@@ -88,3 +88,14 @@ export async function updateProfile(id, formData){
   if (data.status === 'error') throw new Error(data.message || 'Failed to update');
   return data;
 }
+
+export async function deleteProfile(id) {
+  const res = await fetch(`${API_URL}/api/profiles/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error(`Failed to delete profile (${res.status})`);
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message || 'Failed to delete');
+  return data;
+}
