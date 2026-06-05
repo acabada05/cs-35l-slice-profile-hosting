@@ -1,43 +1,204 @@
-# 3D Printer Slicer Profile Hosting Service
+# 3D PRINTER SLICER PROFILE HOSTING SERVICE:
 
-A web-based platform for uploading, managing, sharing, and comparing 3D printer slicer profiles.
+A full-stack web platform for uploading, managing, sharing, comparing 3D printer slice profiles, along with previewing STL models in an interactive 3D viewer.
 
-## Project Overview
+## FEATURES:
 
-Users can upload, view, edit, and compare slicer configurations for different 3D printers. The platform provides an integrated 3D STL viewer, config editor, and diff viewer.
+### AUTHENTICATION:
+- User registration and login
+- JWT-based authentication
+- Protected routes (profiles are user-specific)
+- Secure password hashing
 
-## Tech Stack
+### SLICER PROFILE MANAGEMENT:
+- Upload `.ini` config files with metadata (name, printer type, description)
+- Browse all your uploaded profiles
+- Search/filter profiles by name, printer, or description
+- View detailed profile information with full config content
 
-**Backend:**
-- Python FastAPI
-- MongoDB
-- uvicorn
+### EDIT & VERSION CONTROL:
+- Edit existing profiles (name, description, printer type)
+- Replace configuration files
+- Automatic version tracking on updates
+- View version metadata on each profile
 
-**Frontend:**
-- React / Next.js
-- Tailwind CSS
-- react-diff-viewer-continued
-- Three.js (3D Viewer — planned)
+### PROFILE COMPARISON:
+- Compare any two profiles side-by-side
+- Visual diff highlighting (green=added, red=removed)
+- Toggle between split-view and unified-view
+- See version numbers for each compared profile
 
-## Project Structure
-cs-35l-slice-profile-hosting/
-├── backend/          # FastAPI backend
-│   ├── main.py       # Main app and endpoints
-│   ├── models.py     # Data models
-│   ├── database.py   # Database operations
-│   ├── config.py     # Configuration
-│   ├── .env          # Environment variables
-│   └── requirements.txt
-├── frontend/         # React/Next.js frontend
-├── documents/        # Project documentation
-└── README.md
+### 3D STL VIEWER:
+- Upload `.stl` 3D model files
+- Interactive 3D rendering with Three.js
+- Orbit controls (rotate, pan, zoom)
+- Auto-centering and camera positioning
+- Phong-shaded materials with realistic lighting
+- Download and delete STL files
 
-## Getting Started
+### VISUAL DESIGN:
 
-### Backend Setup
-See [BACKEND_SETUP.md](./backend/BACKEND_SETUP.md) for detailed backend setup instructions.
+- Dark mode support
+- Responsive layouts
+- Clean Tailwind CSS styling
+- Intuitive navigation
 
-### Frontend Setup
+## ARCHITECTURE:
+```mermaid
+graph TB
+    User[👤 User Browser]
+    Frontend[Next.js Frontendlocalhost:3000]
+    Backend[FastAPI Backendlocalhost:8000]
+    MongoDB[(MongoDB AtlasCloud Database)]
+    FileSystem[💾 File Systemuploads/stl/]
+    
+    User -->|HTTPS| Frontend
+    Frontend -->|REST API + JWT| Backend
+    Backend -->|PyMongo| MongoDB
+    Backend -->|File I/O| FileSystem
+    
+    style Frontend fill:#0070f3,color:#fff
+    style Backend fill:#009688,color:#fff
+    style MongoDB fill:#13aa52,color:#fff
+```
+
+## DATABASE SCHEMATICS:
+```mermaid
+erDiagram
+    USER ||--o{ PROFILE : owns
+    USER {
+        ObjectId _id
+        string username UK
+        string email UK
+        string hashed_password
+    }
+    PROFILE {
+        ObjectId _id
+        string name
+        string description
+        string printer_type
+        string config_content
+        string file_name
+        string owner FK
+        int version
+        string parent_id
+        datetime updated_at
+    }
+```
+
+## AUTHENTICATION FLOW:
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant DB as MongoDB
+    
+    U->>F: Enter username/password
+    F->>B: POST /api/auth/login
+    B->>DB: Validate credentials
+    DB-->>B: User data
+    B->>B: Generate JWT token
+    B-->>F: Return JWT token
+    F->>F: Store token in cookie
+    
+    Note over U,DB: Subsequent requests
+    
+    U->>F: Access protected page
+    F->>B: GET /api/profiles + Bearer token
+    B->>B: Validate JWT
+    B->>DB: Query user's profiles
+    DB-->>B: Profiles
+    B-->>F: Return profiles
+    F-->>U: Display profiles
+```
+
+## TECH STACK:
+
+### BACKEND:
+- **Python 3.11+** - Programming language
+- **FastAPI** - Modern web framework
+- **uvicorn** - ASGI server
+- **PyMongo** - MongoDB driver
+- **PyJWT** - JWT token handling
+- **bcrypt/passlib** - Password hashing
+- **python-multipart** - File upload handling
+
+### FRONTEND:
+- **Next.js 16** - React framework with Turbopack
+- **React 18** - UI library
+- **Tailwind CSS** - Utility-first styling
+- **Three.js** - 3D rendering library
+- **react-diff-viewer-continued** - Diff visualization
+- **js-cookie** - Cookie management
+
+```mermaid
+graph TB
+    User[👤 User Browser]
+    Frontend[Next.js Frontendlocalhost:3000]
+    Backend[FastAPI Backendlocalhost:8000]
+    MongoDB[(MongoDB AtlasCloud Database)]
+    FileSystem[💾 File Systemuploads/stl/]
+    
+    User -->|HTTP| Frontend
+    Frontend -->|REST API| Backend
+    Backend -->|PyMongo| MongoDB
+    Backend -->|Read/Write| FileSystem
+```
+
+### DATABASE:
+- **MongoDB Atlas** - Cloud-hosted NoSQL database
+
+## GETTING STARTED:
+
+### PRE-REQUISITES:
+- Python 3.11+
+- Node.js 18+
+- MongoDB Atlas account (or local MongoDB)
+- Git
+
+### 1. CLONE THE REPOSITORY:
+```bash
+git clone https://github.com/acabada05/cs-35l-slice-profile-hosting.git
+cd cs-35l-slice-profile-hosting
+```
+
+### 2. BACKEND SETUP:
+```bash
+cd backend
+
+# CREATE VIRTUAL ENVIRONMENT:
+python -m venv venv
+
+# ACTIVATE VIRTUAL ENVIRONMENT:
+# Windows (Git Bash):
+source venv/Scripts/activate
+# Mac/Linux:
+source venv/bin/activate
+
+# INSTALL DEPENDENCIES:
+pip install -r requirements.txt
+```
+
+### 3. CONFIGURE ENVIRONMENT VARIABLES:
+Create `backend/.env` file with:
+
+```env
+DATABASE_URL=mongodb+srv://username:password@cluster.xxxxx.mongodb.net/slicer_profiles?retryWrites=true&w=majority
+SECRET_KEY=your-secret-key-for-jwt
+```
+
+### 4. START THE BACKEND:
+
+```bash
+uvicorn main:app --reload
+```
+
+Backend runs at: `http://localhost:8000`
+
+### 5. FRONTEND SETUP:
+
+In a new terminal:
 
 ```bash
 cd frontend
@@ -45,29 +206,81 @@ npm install
 npm run dev
 ```
 
-The app runs at [http://localhost:3000](http://localhost:3000). The backend must be running at `http://localhost:8000` for API calls to work.
+Frontend runs at: `http://localhost:3000`
 
-## API Endpoints
+## API ENDPOINTS:
 
-### Profiles
-- `GET /api/health` - Health check
-- `POST /api/profiles/upload` - Upload a new profile
-- `GET /api/profiles` - List all profiles
-- `GET /api/profiles/{id}` - Get a specific profile
+### AUTHENTICATION:
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/auth/signup` | Register new user | No |
+| POST | `/api/auth/login` | Login (returns JWT) | No |
 
-## Pages
-- `/` — Landing page
-- `/upload` — Upload a new slicer profile
-- `/browse` — Browse all hosted profiles
-- `/profiles/[id]` — View a single profile with its configuration content
-- `/compare` — Compare two profiles side-by-side with diff highlighting
+### PROFILES:
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/health` | Health check | No |
+| POST | `/api/profiles/upload` | Upload new profile | Yes |
+| GET | `/api/profiles` | List user's profiles | Yes |
+| GET | `/api/profiles/{id}` | Get specific profile | Yes |
+| PUT | `/api/profiles/{id}` | Update profile | Yes |
+| DELETE | `/api/profiles/{id}` | Delete profile | Yes |
 
-## Team Members
+### STL FILES:
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/stl/upload` | Upload STL file | Yes |
+| GET | `/api/stl` | List all STL files | Yes |
+| GET | `/api/stl/{filename}/download` | Download STL | Yes |
+| DELETE | `/api/stl/{filename}` | Delete STL | Yes |
+
+## APPLICATION PAGES:
+| Route | Description | Auth Required |
+|-------|-------------|---------------|
+| `/` | Landing page | No |
+| `/login` | Login / Signup | No |
+| `/upload` | Upload new profile | Yes |
+| `/browse` | Browse profiles | Yes |
+| `/profiles/[id]` | Profile details + edit | Yes |
+| `/compare` | Compare two profiles | Yes |
+| `/stl` | STL file management | Yes |
+| `/stl/[id]` | 3D STL viewer | Yes |
+
+## PROJECT STRUCTURE:
+```
+cs-35l-slice-profile-hosting/
+├── backend/
+│   ├── main.py              # FastAPI application & endpoints
+│   ├── models.py            # Data models
+│   ├── database.py          # MongoDB operations
+│   ├── security.py          # Auth/JWT utilities
+│   ├── config.py            # Configuration
+│   ├── requirements.txt     # Python dependencies
+│   ├── .env                 # Environment variables (gitignored)
+│   ├── uploads/             # STL file storage (gitignored)
+│   └── BACKEND_SETUP.md     # Backend setup guide
+├── frontend/
+│   ├── app/
+│   │   ├── page.js          # Landing page
+│   │   ├── layout.js        # Root layout with navbar
+│   │   ├── login/           # Login page
+│   │   ├── upload/          # Profile upload
+│   │   ├── browse/          # Profile browse + search
+│   │   ├── profiles/[id]/   # Profile detail + edit
+│   │   ├── compare/         # Diff comparison
+│   │   ├── stl/             # STL list page
+│   │   ├── stl/[id]/        # 3D viewer
+│   │   └── components/      # Reusable components
+│   ├── lib/
+│   │   ├── api.js           # API client
+│   │   └── authContext.js   # Auth utilities
+│   └── package.json         # Node dependencies
+├── documents/               # Project documentation
+└── README.md                # This file
+```
+
+## TEAM MEMBERS:
 - Nathan Lintu
 - Hannan Beiken
 - Jinze Ye
 - Abraham Cabada
-
-## Deadline
-- Target: May 31, 2026
-- Hard Deadline: June 5, 2026

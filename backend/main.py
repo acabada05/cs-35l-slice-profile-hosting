@@ -30,6 +30,12 @@ class UserSignUp(BaseModel):
     username: str
     email: EmailStr
     password: str
+    
+class ProfileUpdate(BaseModel):
+    name: str
+    description: str = ""
+    printer_type: str = ""
+    config_content: str = ""
 
 # Require Authentication
 def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -219,3 +225,42 @@ def delete_stl(file_id: str, current_user: dict = Depends(get_current_user)):
 
     db.delete_stl_by_id_and_owner(file_id, current_user["username"])
     return {"status": "success", "message": "File deleted"}
+
+@app.put("/api/profiles/{profile_id}")
+def update_profile(
+    profile_id: str,
+    payload: ProfileUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    # Validate name isn't blank after stripping (Pydantic ensures it's a str)
+    if not payload.name.strip():
+        raise HTTPException(status_code=400, detail="Profile name cannot be empty.")
+    if len(payload.name.strip()) > 120:
+        raise HTTPException(status_code=400, detail="Profile name must be 120 characters or fewer.")
+ 
+    try:
+        # Reuse the same ownership-scoped lookup as the GET endpoint so a user
+        # cannot discover or overwrite another user's profiles.
+        existing = db.get_profile_by_id_and_owner(profile_id, owner=current_user["username"])
+        if not existing:
+            raise HTTPException(status_code=404, detail="Profile not found")
+ 
+        updated_fields = {
+            "name": payload.name.strip(),
+            "description": payload.description.strip(),
+            "printer_type": payload.printer_type.strip(),
+            "config_content": payload.config_content,
+        }
+ 
+        updated_profile = db.update_profile_by_id_and_owner(
+            profile_id,
+            owner=current_user["username"],
+            fields=updated_fields,
+        )
+ 
+        return {"profile": updated_profile}
+ 
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

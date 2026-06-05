@@ -92,4 +92,23 @@ class Database:
             del user["_id"]
         return user
 
+    def update_profile_by_id_and_owner(self, profile_id: str, owner: str, fields: dict) -> Optional[dict]:
+        try:
+            obj_id = ObjectId(profile_id)
+            result = self.profiles_collection.update_one(
+                {"_id": obj_id, "owner": owner},
+                {"$set": fields}
+            )
+            if result.matched_count == 0:
+                return None
+            # Re-fetch and normalize _id -> id, same as get_profile_by_id_and_owner
+            updated = self.profiles_collection.find_one({"_id": obj_id, "owner": owner})
+            if updated:
+                updated["id"] = str(updated["_id"])
+                del updated["_id"]
+            return updated
+        except Exception:
+            return None
+
+
 db = Database()
