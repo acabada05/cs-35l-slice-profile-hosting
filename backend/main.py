@@ -6,6 +6,9 @@ import jwt
 from models import Profile
 from database import db
 from security import hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
+import os
+from fastapi.responses import FileResponse
+import uuid
 
 app = FastAPI()
 
@@ -18,6 +21,9 @@ app.add_middleware(
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+STL_UPLOAD_DIR = "uploads/stl"
+os.makedirs(STL_UPLOAD_DIR, exist_ok=True)
 
 # Class for Authentication
 class UserSignUp(BaseModel):
@@ -149,3 +155,67 @@ def delete_profile(profile_id: str, current_user: dict = Depends(get_current_use
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/stl/upload", status_code=status.HTTP_201_CREATED)
+async def upload_stl(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if not file.filename.lower().endswith(".stl"):
+        raise HTTPException(status_code=400, detail="Only .stl files are accepted")
+
+    user_dir = os.path.join(STL_UPLOAD_DIR, current_user["username"])
+    os.makedirs(user_dir, exist_ok=True)
+
+    file_id = str(uuid.uuid4())
+    dest_path = os.path.join(user_dir, f"{file_id}.stl")
+
+    content = await file.read()
+    with open(dest_path, "wb") as f:
+        f.write(content)
+
+    stl_record = {
+        "file_id": file_id,
+        "original_name": file.filename,
+        "owner": current_user["username"]
+    }
+    db.insert_stl(stl_record)
+
+    return {"status": "success", "file_id": file_id, "name": file.filename}
+
+
+@app.get("/api/stl")
+def list_stl_files(current_user: dict = Depends(get_current_user)):
+    files = db.get_stl_files_by_owner(current_user["username"])
+    return {"files": files, "count": len(files)}
+
+
+@app.get("/api/stl/{file_id}/download")
+def download_stl(file_id: str, current_user: dict = Depends(get_current_user)):
+    record = db.get_stl_by_id_and_owner(file_id, current_user["username"])
+    if not record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = os.path.join(STL_UPLOAD_DIR, current_user["username"], f"{file_id}.stl")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+
+    return FileResponse(
+        path=file_path,
+        media_type="application/octet-stream",
+        filename=record["original_name"]
+    )
+
+
+@app.delete("/api/stl/{file_id}")
+def delete_stl(file_id: str, current_user: dict = Depends(get_current_user)):
+    record = db.get_stl_by_id_and_owner(file_id, current_user["username"])
+    if not record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = os.path.join(STL_UPLOAD_DIR, current_user["username"], f"{file_id}.stl")
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    db.delete_stl_by_id_and_owner(file_id, current_user["username"])
+    return {"status": "success", "message": "File deleted"}
