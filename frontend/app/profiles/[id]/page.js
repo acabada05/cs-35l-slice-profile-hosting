@@ -7,6 +7,7 @@ import { deleteProfile } from "@/lib/api";
 import { addRecentlyViewed } from "@/lib/recentlyViewed";
 import { getAuthToken, isAuthenticated } from "@/lib/authContext";
 
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ---------------------------------------------------------------------------
 // Edit Drawer
@@ -60,7 +61,7 @@ function EditDrawer({ profile, open, onClose, onSaved }) {
       console.log("submitting body:", JSON.stringify(form));
 
       const res = await fetch(
-        `http://localhost:8000/api/profiles/${profile.id}`,
+        `${baseUrl}/api/profiles/${profile.id}`,
         {
           method: "PUT",
           headers: {
@@ -240,7 +241,7 @@ export default function ProfileDetailsPage({ params }) {
     async function fetchProfileDetails() {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/profiles/${profileId}`,
+          `${baseUrl}/api/profiles/${profileId}`,
           { headers: { Authorization: `Bearer ${getAuthToken()}` } }
         );
         if (!res.ok) throw new Error("Could not find this profile.");

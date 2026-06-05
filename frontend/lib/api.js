@@ -83,7 +83,7 @@ export async function deleteProfile(profileId) {
     .find((row) => row.startsWith("slice_profile_token="))
     ?.split("=")[1];
 
-  const res = await fetch(`http://localhost:8000/api/profiles/${profileId}`, {
+  const res = await fetch(`${API_URL}/api/profiles/${profileId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,

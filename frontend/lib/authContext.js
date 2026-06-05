@@ -5,8 +5,8 @@ const USER_KEY = "slice_profile_user";
 
 export function setAuthSession(token, username) {
   // Store token for 7 days
-  Cookies.set(TOKEN_KEY, token, { expires: 7, secure: true, sameSite: 'strict' });
-  Cookies.set(USER_KEY, username, { expires: 7, secure: true, sameSite: 'strict' });
+  Cookies.set(TOKEN_KEY, token, { expires: 7, secure: false, sameSite: 'strict' });
+  Cookies.set(USER_KEY, username, { expires: 7, secure: false, sameSite: 'strict' });
 }
 
 export function getAuthToken() {

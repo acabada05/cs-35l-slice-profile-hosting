@@ -6,6 +6,8 @@ import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function STLViewerPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -24,7 +26,7 @@ export default function STLViewerPage() {
 
   const fetchFile = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/stl", {
+      const res = await fetch(`${baseUrl}/api/stl`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       const data = await res.json();
@@ -64,7 +66,7 @@ export default function STLViewerPage() {
     dirLight2.position.set(-5, -5, -5);
     scene.add(dirLight2);
 
-    fetch(`http://localhost:8000/api/stl/${id}/download`, {
+    fetch(`${baseUrl}/api/stl/${id}/download`, {
       headers: { Authorization: `Bearer ${getAuthToken()}` },
     })
       .then((r) => r.arrayBuffer())
