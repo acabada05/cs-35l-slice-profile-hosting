@@ -228,10 +228,16 @@ async def update_profile(
     file: UploadFile = File(...),
     name: str = Form(""),
     description: str = Form(""),
-    printer_type: str = Form("")
+    printer_type: str = Form(""),
+    current_user: dict = Depends(get_current_user)
 ):
     """Update an existing profile (creates a new version)"""
     try:
+        # Verify ownership before update
+        existing = db.get_profile_by_id_and_owner(profile_id, owner=current_user["username"])
+        if not existing:
+            raise HTTPException(status_code=404, detail="Profile not found")
+
         content = await file.read()
         config_text = content.decode("utf-8")
 
@@ -245,5 +251,7 @@ async def update_profile(
 
         result = db.update_profile(profile_id, profile)
         return {"status": "success", "message": "Profile updated", "profile_id": result}
+    except HTTPException:
+        raise
     except Exception as e:
         return {"status": "error", "message": str(e)}

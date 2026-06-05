@@ -1,5 +1,13 @@
 venv/
 __pycache__/
-*.__pycache__.env
+*.pyc
 .DS_Store
-.envuploads/
+.env
+
+# Ignore newly uploaded STL files (Abraham's example files
+# AphroditeBust.stl, Cube_3d_printing_sample.stl, Menger_sponge_sample.stl
+# are kept in repo as demo data and remain tracked).
+uploads/stl/*
+!uploads/stl/AphroditeBust.stl
+!uploads/stl/Cube_3d_printing_sample.stl
+!uploads/stl/Menger_sponge_sample.stl
