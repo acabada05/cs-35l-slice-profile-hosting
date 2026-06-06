@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useState, use, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { deleteProfile } from "@/lib/api";
+import { getProfile, updateProfile, deleteProfile } from "@/lib/api";
 import { addRecentlyViewed } from "@/lib/recentlyViewed";
 import { getAuthToken, isAuthenticated } from "@/lib/authContext";
-import { useParams, useRouter } from 'next/navigation';
-import { getProfile, updateProfile, deleteProfile } from '@/lib/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ---------------------------------------------------------------------------
-// Edit Drawer
+// Edit Drawer Component
 // ---------------------------------------------------------------------------
 function EditDrawer({ profile, open, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -76,7 +74,6 @@ function EditDrawer({ profile, open, onClose, onSaved }) {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        // FastAPI validation errors come back as { detail: [...] } or { detail: "string" }
         const detail = body.detail;
         if (Array.isArray(detail)) {
           throw new Error(detail.map((e) => e.msg).join("; "));
@@ -208,7 +205,7 @@ function EditDrawer({ profile, open, onClose, onSaved }) {
 }
 
 // ---------------------------------------------------------------------------
-// Tiny helpers
+// Design Utilities
 // ---------------------------------------------------------------------------
 const inputCls =
   "w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:focus:ring-zinc-500 transition";
@@ -226,30 +223,19 @@ function Field({ label, required, children }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main page
+// Main Page Export Block
 // ---------------------------------------------------------------------------
 export default function ProfileDetailsPage({ params }) {
   const router = useRouter();
 
-  // Unwrap the params Promise
+  // Unwrap parameters Promise
   const unwrappedParams = use(params);
   const profileId = unwrappedParams.id;
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [updateForm, setUpdateForm] = useState({
-    name: '',
-    description: '',
-    printer_type: '',
-    file: null,
-  });
-  const [updating, setUpdating] = useState(false);
-  const [updateError, setUpdateError] = useState('');
-  const [updateSuccess, setUpdateSuccess] = useState('');
+  const [pageError, setPageError] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState("");
   const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
@@ -264,7 +250,7 @@ export default function ProfileDetailsPage({ params }) {
         setProfile(data.profile);
         addRecentlyViewed(data.profile);
       } catch (err) {
-        setError(err.message);
+        setPageError(err.message);
       } finally {
         setLoading(false);
       }
@@ -278,37 +264,39 @@ export default function ProfileDetailsPage({ params }) {
     );
     if (!confirmed) return;
     setDeleting(true);
-    setError("");
+    setPageError("");
     try {
       await deleteProfile(profileId);
       router.refresh();
       router.push("/browse");
     } catch (err) {
-      setError(err.message || "Failed to remove the profile configuration.");
+      setPageError(err.message || "Failed to remove the profile configuration.");
       setDeleting(false);
     }
   };
 
-  // Called by EditDrawer after a successful save
   const handleSaved = (updated) => {
     setProfile(updated);
     addRecentlyViewed(updated);
-    router.refresh(); // revalidate any server-cached pages
+    router.refresh(); 
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="p-8 text-sm text-zinc-500">
         Loading profile configurations…
       </div>
     );
-  if (error && !profile)
-    return <div className="p-8 text-sm text-red-500">{error}</div>;
+  }
+
+  if (pageError && !profile) {
+    return <div className="p-8 text-sm text-red-500">{pageError}</div>;
+  }
 
   return (
     <>
       <div className="max-w-4xl mx-auto px-6 py-12">
-        {/* Back */}
+        {/* Back Link */}
         <Link
           href="/browse"
           className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
@@ -316,7 +304,7 @@ export default function ProfileDetailsPage({ params }) {
           ← Back to profiles
         </Link>
 
-        {/* Header */}
+        {/* Profile Header Block */}
         <div className="mt-6 border-b border-zinc-200 dark:border-zinc-800 pb-6">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
             {profile.name}
@@ -327,7 +315,7 @@ export default function ProfileDetailsPage({ params }) {
               {profile.printer_type || "Universal Slicer Profile"}
             </p>
 
-            {/* Edit */}
+            {/* Edit Trigger */}
             <button
               onClick={() => setEditOpen(true)}
               className="text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
@@ -335,7 +323,7 @@ export default function ProfileDetailsPage({ params }) {
               Edit Profile
             </button>
 
-            {/* Delete */}
+            {/* Delete Trigger */}
             <button
               onClick={handleDelete}
               disabled={deleting}
@@ -345,32 +333,8 @@ export default function ProfileDetailsPage({ params }) {
             </button>
           </div>
         </div>
-      )}
 
-      {/* Action buttons */}
-      <div className="mt-6 flex gap-3">
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="text-sm px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-        >
-          {isEditing ? 'Cancel' : 'Edit Profile'}
-        </button>
-        <Link
-          href="/compare"
-          className="text-sm px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-        >
-          Compare →
-        </Link>
-      </div>
-
-      {/* EDIT FORM */}
-      {isEditing && (
-        <form onSubmit={handleUpdateSubmit} className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-8">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
-            Update Profile
-          </h2>
-
-        {/* Body */}
+        {/* Informational Presentation Body */}
         <div className="mt-6 space-y-6">
           <div>
             <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
@@ -381,9 +345,9 @@ export default function ProfileDetailsPage({ params }) {
             </p>
           </div>
 
-          {error && (
+          {pageError && (
             <div className="p-3 text-sm rounded-lg bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400">
-              {error}
+              {pageError}
             </div>
           )}
 
@@ -391,22 +355,32 @@ export default function ProfileDetailsPage({ params }) {
             <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
               G-Code / Slicer INI Content
             </h2>
-            <pre className="p-4 rounded-xl bg-zinc-940 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-xs font-mono text-zinc-800 dark:text-zinc-300 max-h-96">
+            <pre className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-xs font-mono text-zinc-800 dark:text-zinc-300 max-h-96 whitespace-pre">
               {profile.config_content}
             </pre>
           </div>
         </div>
-      )}
 
-      {/* Profile ID */}
-      <div className="mt-10 text-xs text-zinc-500">
-        Profile ID:{' '}
-        <span className="font-mono">
-          {profile.id || profile._id || profile.profile_id}
-        </span>
+        {/* Action Link Control Strip */}
+        <div className="mt-6 flex gap-3">
+          <Link
+            href="/compare"
+            className="text-sm px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+          >
+            Compare Profiles →
+          </Link>
+        </div>
+
+        {/* Profile Identifier Footer */}
+        <div className="mt-10 text-xs text-zinc-500">
+          Profile ID:{' '}
+          <span className="font-mono">
+            {profile.id || profile._id || profile.profile_id}
+          </span>
+        </div>
       </div>
 
-      {/* Edit drawer — rendered outside the content flow so it overlays everything */}
+      {/* Edit Slide-out Overlay Overlay Container */}
       <EditDrawer
         profile={profile}
         open={editOpen}
