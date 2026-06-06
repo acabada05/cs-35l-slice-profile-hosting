@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuthToken, isAuthenticated } from "@/lib/authContext";
 
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function STLPage() {
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -23,7 +25,7 @@ export default function STLPage() {
   const fetchFiles = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/stl", {
+      const res = await fetch(`${baseUrl}/api/stl`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
       const data = await res.json();
@@ -45,7 +47,7 @@ export default function STLPage() {
     const form = new FormData();
     form.append("file", file);
     try {
-      const res = await fetch("http://localhost:8000/api/stl/upload", {
+      const res = await fetch(`${baseUrl}/api/stl/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${getAuthToken()}` },
         body: form,
@@ -61,7 +63,7 @@ export default function STLPage() {
 
   const handleDelete = async (fileId) => {
     try {
-      await fetch(`http://localhost:8000/api/stl/${fileId}`, {
+      await fetch(`${baseUrl}/api/stl/${fileId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getAuthToken()}` },
       });
@@ -128,7 +130,7 @@ export default function STLPage() {
               <div className="flex items-center gap-4 ml-4 shrink-0">
                 <button
                 onClick={() => {
-                    fetch(`http://localhost:8000/api/stl/${f.file_id}/download`, {
+                    fetch(`${baseUrl}/api/stl/${f.file_id}/download`, {
                     headers: { Authorization: `Bearer ${getAuthToken()}` },
                     })
                     .then((r) => r.blob())

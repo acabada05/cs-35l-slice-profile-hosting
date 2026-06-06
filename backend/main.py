@@ -9,6 +9,9 @@ from pathlib import Path
 from models import Profile
 from database import db
 from security import hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
+import os
+from fastapi.responses import FileResponse
+import uuid
 
 app = FastAPI()
 
@@ -89,11 +92,20 @@ app.add_middleware(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
+STL_UPLOAD_DIR = "uploads/stl"
+os.makedirs(STL_UPLOAD_DIR, exist_ok=True)
+
 # Class for Authentication
 class UserSignUp(BaseModel):
     username: str
     email: EmailStr
     password: str
+    
+class ProfileUpdate(BaseModel):
+    name: str
+    description: str = ""
+    printer_type: str = ""
+    config_content: str = ""
 
 # Require Authentication
 def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -218,40 +230,107 @@ def delete_profile(profile_id: str, current_user: dict = Depends(get_current_use
     except HTTPException:
         raise
     except Exception as e:
-        return {"status": "error", "message": str(e)}
-    
-#Frontend Endpoint to Update an Existing Profile.
-#Creates backend API endpoint frontend calls to update an existing profile.
-@app.put("/api/profiles/{profile_id}")
-async def update_profile(
-    profile_id: str,
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/stl/upload", status_code=status.HTTP_201_CREATED)
+async def upload_stl(
     file: UploadFile = File(...),
-    name: str = Form(""),
-    description: str = Form(""),
-    printer_type: str = Form(""),
     current_user: dict = Depends(get_current_user)
 ):
-    """Update an existing profile (creates a new version)"""
+    if not file.filename.lower().endswith(".stl"):
+        raise HTTPException(status_code=400, detail="Only .stl files are accepted")
+
+    user_dir = os.path.join(STL_UPLOAD_DIR, current_user["username"])
+    os.makedirs(user_dir, exist_ok=True)
+
+    file_id = str(uuid.uuid4())
+    dest_path = os.path.join(user_dir, f"{file_id}.stl")
+
+    content = await file.read()
+    with open(dest_path, "wb") as f:
+        f.write(content)
+
+    stl_record = {
+        "file_id": file_id,
+        "original_name": file.filename,
+        "owner": current_user["username"]
+    }
+    db.insert_stl(stl_record)
+
+    return {"status": "success", "file_id": file_id, "name": file.filename}
+
+
+@app.get("/api/stl")
+def list_stl_files(current_user: dict = Depends(get_current_user)):
+    files = db.get_stl_files_by_owner(current_user["username"])
+    return {"files": files, "count": len(files)}
+
+
+@app.get("/api/stl/{file_id}/download")
+def download_stl(file_id: str, current_user: dict = Depends(get_current_user)):
+    record = db.get_stl_by_id_and_owner(file_id, current_user["username"])
+    if not record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = os.path.join(STL_UPLOAD_DIR, current_user["username"], f"{file_id}.stl")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+
+    return FileResponse(
+        path=file_path,
+        media_type="application/octet-stream",
+        filename=record["original_name"]
+    )
+
+
+@app.delete("/api/stl/{file_id}")
+def delete_stl(file_id: str, current_user: dict = Depends(get_current_user)):
+    record = db.get_stl_by_id_and_owner(file_id, current_user["username"])
+    if not record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = os.path.join(STL_UPLOAD_DIR, current_user["username"], f"{file_id}.stl")
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    db.delete_stl_by_id_and_owner(file_id, current_user["username"])
+    return {"status": "success", "message": "File deleted"}
+
+@app.put("/api/profiles/{profile_id}")
+def update_profile(
+    profile_id: str,
+    payload: ProfileUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    # Validate name isn't blank after stripping (Pydantic ensures it's a str)
+    if not payload.name.strip():
+        raise HTTPException(status_code=400, detail="Profile name cannot be empty.")
+    if len(payload.name.strip()) > 120:
+        raise HTTPException(status_code=400, detail="Profile name must be 120 characters or fewer.")
+ 
     try:
-        # Verify ownership before update
+        # Reuse the same ownership-scoped lookup as the GET endpoint so a user
+        # cannot discover or overwrite another user's profiles.
         existing = db.get_profile_by_id_and_owner(profile_id, owner=current_user["username"])
         if not existing:
             raise HTTPException(status_code=404, detail="Profile not found")
-
-        content = await file.read()
-        config_text = content.decode("utf-8")
-
-        profile = Profile(
-            name=name,
-            description=description,
-            printer_type=printer_type,
-            config_content=config_text,
-            file_name=file.filename
+ 
+        updated_fields = {
+            "name": payload.name.strip(),
+            "description": payload.description.strip(),
+            "printer_type": payload.printer_type.strip(),
+            "config_content": payload.config_content,
+        }
+ 
+        updated_profile = db.update_profile_by_id_and_owner(
+            profile_id,
+            owner=current_user["username"],
+            fields=updated_fields,
         )
-
-        result = db.update_profile(profile_id, profile)
-        return {"status": "success", "message": "Profile updated", "profile_id": result}
+ 
+        return {"profile": updated_profile}
+ 
     except HTTPException:
         raise
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))

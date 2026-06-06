@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+data/
 uploads/stl/*
 !uploads/stl/AphroditeBust.stl
 !uploads/stl/Cube_3d_printing_sample.stl
