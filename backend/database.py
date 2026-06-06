@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pymongo import MongoClient
 from config import DATABASE_URL
 from models import Profile

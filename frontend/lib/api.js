@@ -77,23 +77,25 @@ export async function getProfile(id) {
   return data.profile;
 }
 
-export async function deleteProfile(profileId) {
-  const token = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("slice_profile_token="))
-    ?.split("=")[1];
-
-  const res = await fetch(`${API_URL}/api/profiles/${profileId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+export async function updateProfile(id, formData){
+  const res = await fetch(`${API_URL}/api/profiles/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: formData,
   });
+  if (!res.ok) throw new Error(`Failed to update profile (${res.status})`);
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message || 'Failed to update');
+  return data;
+}
 
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to delete profile");
-  }
-
-  return await res.json();
+export async function deleteProfile(id) {
+  const res = await fetch(`${API_URL}/api/profiles/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error(`Failed to delete profile (${res.status})`);
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message || 'Failed to delete');
+  return data;
 }

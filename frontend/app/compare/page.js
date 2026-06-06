@@ -202,23 +202,36 @@ export default function ComparePage() {
 
             {leftProfile && rightProfile && !comparing && (
               <section className="mt-12">
-                <div className="flex items-baseline justify-between mb-4">
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                    Comparing{' '}
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {leftProfile.name}
-                    </span>{' '}
-                    →{' '}
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {rightProfile.name}
-                    </span>
+                <div className="space-y-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-4">
+                      <p className="text-xs text-zinc-500 mb-1">Profile A</p>
+                      <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {leftProfile.name}
+                      </h3>
+                      <p className="text-xs text-zinc-500 mt-2">
+                        Version {leftProfile.version || 1}
+                      </p>
+                    </div>
+                    
+                    <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-4">
+                      <p className="text-xs text-zinc-500 mb-1">Profile B</p>
+                      <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {rightProfile.name}
+                      </h3>
+                      <p className="text-xs text-zinc-500 mt-2">
+                        Version {rightProfile.version || 1}
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Toggle Button */}
                   <button
                     type="button"
                     onClick={() => setSplitView((v) => !v)}
-                    className="text-xs px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+                    className="w-full text-xs px-3 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
                   >
-                    {splitView ? 'Unified view' : 'Side-by-side view'}
+                    {splitView ? 'Switch to Unified View' : 'Switch to Side-by-Side View'}
                   </button>
                 </div>
 

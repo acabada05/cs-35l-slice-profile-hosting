@@ -3,6 +3,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 import jwt
+import os
+
+from pathlib import Path
 from models import Profile
 from database import db
 from security import hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
@@ -11,6 +14,73 @@ from fastapi.responses import FileResponse
 import uuid
 
 app = FastAPI()
+
+UPLOAD_DIR = Path("uploads/stl")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@app.post("/api/stl/upload") 
+async def upload_stl(file: UploadFile = File(...)):
+    """Upload an STL file"""
+    try:
+        file_path = UPLOAD_DIR / file.filename
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        return {
+            "status": "success",
+            "message": "STL uploaded",
+            "filename": file.filename,
+            "size": len(content)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/api/stl")
+async def list_stls():
+    """List all uploaded STLs"""
+    try:
+        files = []
+        for f in UPLOAD_DIR.iterdir():
+            if f.is_file():
+                files.append({
+                    "file_id": f.name,
+                    "original_name": f.name,
+                    "size": f.stat().st_size
+                })
+        return {"files": files}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/stl/{file_id}/download")
+async def download_stl(file_id: str):
+    """Download an STL file"""
+    from fastapi.responses import FileResponse
+    file_path = UPLOAD_DIR / file_id
+    if file_path.exists():
+        return FileResponse(file_path, filename=file_id)
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.delete("/api/stl/{file_id}")
+async def delete_stl(file_id: str):
+    """Delete an STL file"""
+    try:
+        file_path = UPLOAD_DIR / file_id
+        if file_path.exists():
+            file_path.unlink()
+            return {"status": "success", "message": "File deleted"}
+        return {"status": "error", "message": "File not found"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/stl/{filename}")
+async def get_stl(filename: str):
+    """Get an STL file"""
+    from fastapi.responses import FileResponse
+    file_path = UPLOAD_DIR / filename
+    if file_path.exists():
+        return FileResponse(file_path)
+    return {"status": "error", "message": "File not found"}
 
 app.add_middleware(
     CORSMiddleware,

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { deleteProfile } from "@/lib/api";
 import { addRecentlyViewed } from "@/lib/recentlyViewed";
 import { getAuthToken, isAuthenticated } from "@/lib/authContext";
+import { useParams, useRouter } from 'next/navigation';
+import { getProfile, updateProfile, deleteProfile } from '@/lib/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -228,11 +230,24 @@ function Field({ label, required, children }) {
 // ---------------------------------------------------------------------------
 export default function ProfileDetailsPage({ params }) {
   const router = useRouter();
+
+  // Unwrap the params Promise
   const unwrappedParams = use(params);
   const profileId = unwrappedParams.id;
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [updateForm, setUpdateForm] = useState({
+    name: '',
+    description: '',
+    printer_type: '',
+    file: null,
+  });
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState('');
+  const [updateSuccess, setUpdateSuccess] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [editOpen, setEditOpen] = useState(false);
@@ -330,6 +345,30 @@ export default function ProfileDetailsPage({ params }) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="mt-6 flex gap-3">
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className="text-sm px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+        >
+          {isEditing ? 'Cancel' : 'Edit Profile'}
+        </button>
+        <Link
+          href="/compare"
+          className="text-sm px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+        >
+          Compare →
+        </Link>
+      </div>
+
+      {/* EDIT FORM */}
+      {isEditing && (
+        <form onSubmit={handleUpdateSubmit} className="mt-8 border-t border-zinc-200 dark:border-zinc-800 pt-8">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+            Update Profile
+          </h2>
 
         {/* Body */}
         <div className="mt-6 space-y-6">
@@ -357,6 +396,14 @@ export default function ProfileDetailsPage({ params }) {
             </pre>
           </div>
         </div>
+      )}
+
+      {/* Profile ID */}
+      <div className="mt-10 text-xs text-zinc-500">
+        Profile ID:{' '}
+        <span className="font-mono">
+          {profile.id || profile._id || profile.profile_id}
+        </span>
       </div>
 
       {/* Edit drawer — rendered outside the content flow so it overlays everything */}
